@@ -1,4 +1,4 @@
-pkibooster-test-drive
+PKI Booster Javascript
 =====================
 
-This is a test drive page for PKI Booster
+This is a Javascript wrapper around PKI Booster that enables you to develope cross-browser PKI web applications.
