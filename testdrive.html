@@ -1,0 +1,323 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+    <title>PKIBooster Test Drive Page</title>
+    <meta charset="utf-8">
+    <script src="js/pkibooster.js" type="text/javascript"></script>
+    <link rel="styleSheet" type="text/css" href="stylesheets/jquery-ui.css" />
+    <link rel="styleSheet" type="text/css" href="stylesheets/testdrive.css" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/ui.jqgrid.css" />
+
+    <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/jquery-ui.js"></script>
+    <script type="text/javascript" src="js/jquery.jqGrid.src.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+<body>
+<div id="overlay"></div>
+
+<div id="pbIsLoadingDialog">
+    Please wait while PKI Booster is loading.
+    <img src="images/wait.gif">
+</div>
+
+<div id="signDialog">
+    <label for="messageToSign">Message to sign: </label><textarea rows="5" cols="60" id="messageToSign"></textarea>
+    <input type="radio" id="messageFormatText" name="messageFormat" value="text" checked><label
+        for="messageFormatText">Text</label>
+    <input type="radio" id="messageFormatHex" name="messageFormat" value="hex"><label for="messageFormatHex">Hex encoded
+    binary</label>
+    <input type="radio" id="messageFormatBase64" name="messageFormat" value="base64"><label for="messageFormatBase64">Base64
+    encoded binary</label>
+
+</div>
+
+<div id="tabs">
+<ul>
+    <li><a href="#one">Personal Storage</a></li>
+    <li><a href="#two">PKCS#11</a></li>
+</ul>
+<div id="two">
+    <table id="p11certs"></table>
+    <!--
+            <div id="p11Pager"></div>
+    -->
+    <p align="center">
+        <input type="button" class="ui-button" id="p11SignButton" value="Sign">
+        <input type="button" class="ui-button" id="genKeypairButton" value="Generate Keypair">
+    </p>
+    <br>
+    <p>
+        <label for="p11DllFile">PKCS#11 DLL: </label>
+        <input type="file" class="ui-button" id="p11DllFile">
+        <input type="button" id="openP11Button" class="ui-button" value="Open" >
+        <input type="button" id="closeP11Button" class="ui-button" value="Close" >
+    </p>
+</div>
+<div id="one">
+    <table id="wincerts"></table>
+    <p align="center">
+        <input type="button" class="ui-button" id="winSignButton" value="Sign">
+    </p>
+</div>
+
+<div id="p11LoginDialog">
+    <table>
+        <tr>
+            <td><label for="slotNum">Slot: </label></td><td><input type="text" id="slotNum" value="0"></td>
+        </tr>
+        <tr>
+            <td><label for="userPIN">User PIN: </label></td><td><input type="password" id="userPIN"></td>
+        </tr>
+    </table>
+</div>
+<script type="text/javascript">
+    function loadCerts(storage, grid) {
+        grid.jqGrid("clearGridData");
+        var p11certData = [];
+        var certCount = storage.getCount();
+        for(i = 0; i < certCount; i++) {
+            var cert = storage.getCertificate(i);
+            var subjectName = cert.getSubjectName();
+            var commonName = subjectName.getCommonName();
+            var serial = cert.getSerialNumber();
+            var validFrom = cert.getValidFrom();
+            var validTo = cert.getValidTo();
+            p11certData[i] = {id: i + 1, serial: serial, commonName:commonName, validfrom: validFrom, validto: validTo};
+            grid.jqGrid('addRowData', i + 1, p11certData[i]);
+        }
+    }
+
+    function showMessage(e, caption) {
+        var dialogCaption = "";
+        if(caption)
+            dialogCaption = caption;
+
+        $("<div>" + e + "</div>").dialog({modal:true, width: 'auto', title: dialogCaption});
+    }
+</script>
+<script>
+function signMessage(grid, storage) {
+    var selRowId = grid.jqGrid ('getGridParam', 'selrow');
+    var celValue = grid.jqGrid ('getCell', selRowId, 'id');
+    if(!celValue){
+        showMessage("Select a certificate to sign.");
+        return;
+    }
+
+    var certIndex = Number(celValue) - 1;
+    selectedCert = storage.getCertificate(certIndex);
+
+    $( "#signDialog" ).dialog({
+        buttons: {
+            Sign: function(event) {
+                try {
+                    var message = $("#messageToSign").val();
+                    var messageFormat = $('input[name=messageFormat]:checked').val();
+                    var util = new Util();
+                    if(messageFormat == "text")
+                        message = util.stringToBase64(message);
+                    else if (messageFormat == "hex")
+                        message = util.hexStringToBase64(message);
+
+                    var signer = new Signer();
+                    var memoryStorage = new MemoryStorage();
+                    memoryStorage.add(selectedCert, false);
+                    signer.setStorage(memoryStorage);
+                    var signedMessage = signer.sign(message, true);
+                    showMessage(signedMessage, "Signed Message");
+                } catch(e) {
+                    showMessage(e, "Error");
+                }
+
+            },
+
+            Cancel: function(event) {
+                $( this ).dialog( "close" );
+            }
+        },
+        width: 600,
+        title: "Sign Dialog",
+        autoOpen: true,
+        hide: "fade",
+        modal: true
+    });
+}
+function onPBReady() {
+    $("#pbIsLoadingDialog").dialog("close");
+    $( "#p11LoginDialog" ).dialog({
+        buttons: {
+            Login: function(event) {
+                try {
+                    if(p11.isOpened()) {
+                        session.logout();
+                        p11.close();
+                    }
+                    var p11DllPath = $("#p11DllFile").val();
+
+                    //Chrome gives "C:\\fakepath\\[p11dll]" instead of "[realpath]\[p11dll]"
+
+                    p11DllPath = p11DllPath.substring(p11DllPath.lastIndexOf("\\") + 1);
+                    p11.setDllName(p11DllPath);
+                    p11.open();
+                    session = p11.openSession($("#slotNum").val(), false);
+                    session.login(PB_UT_USER, $("#userPIN").val());
+                    $("#closeP11Button").prop("disabled", false);
+                    $("#genKeypairButton").prop("disabled", false);
+                    $("#p11SignButton").prop("disabled", false);
+                    $("#openP11Button").prop("disabled", true);
+                    loadCerts(p11, $("#p11certs"));
+                    $( "#userPIN").val("");
+                    $( this ).dialog( "close" );
+                } catch (e) {
+                    showMessage(e);
+                }
+            },
+
+            Cancel: function(event) {
+                $( "#userPIN").value = "";
+                $( this ).dialog( "close" );
+            }
+        },
+        width: 600,
+        title: "PKCS#11 Login Dialog",
+        autoOpen: false,
+        hide: "fade",
+        modal: true
+    });
+    $( "#openP11Button" ).on("click", function(event) {
+        $( "#p11LoginDialog" ).dialog("open");
+    });
+    $("#closeP11Button").on("click", function(event) {
+        session.logout();
+        p11.close();
+        $("#p11certs").jqGrid("clearGridData");
+        $("#openP11Button").prop("disabled", false);
+        $("#genKeypairButton").prop("disabled", true);
+        $("#p11SignButton").prop("disabled", true);
+        $("#closeP11Button").prop("disabled", true);
+    });
+
+    $("#p11SignButton").on("click", function(event){
+        var grid = $('#p11certs');
+        signMessage(grid, p11);
+    } );
+
+    $("#winSignButton").on("click", function(event){
+        var grid = $('#wincerts');
+        signMessage(grid, winStorage);
+    } );
+
+    $("#openP11Button").prop("disabled", true);
+    $("#closeP11Button").prop("disabled", true);
+    $("#genKeypairButton").prop("disabled", true);
+    $("#p11SignButton").prop("disabled", true);
+
+    $("#p11DllFile").on("change", function(event) {
+        var disable = this.value === "";
+        $("#openP11Button").prop("disabled", disable);
+    });
+
+    $("#genKeypairButton").on("click", function(event) {
+        try {
+            var keyPair = new RSAKeyMaterial(p11.getCryptoProvider());
+            keyPair.generate(1024);
+        } catch(e) {
+            showMessage(e);
+        }
+    });
+
+    p11 = new PKCS11Storage();
+    winStorage = new WinStorage();
+    loadCerts(winStorage, $("#wincerts"))
+    $("#overlay").hide();
+}
+$("#overlay").show();
+// Prepare page elements
+$("#p11certs").jqGrid({
+    datatype: "local",
+    height: 250,
+    colNames: ['No.', 'Serial Number', 'Common Name', 'Valid From', 'Valid To'],
+    colModel: [
+        {name:'id', index:'id', width:60, sorttype:"int"},
+        {name: 'serial', index: 'serial', width:120, sorttype:"string"},
+        {name:'commonName', index:'commonName', width: 120, sorttype:"string"},
+        {name:'validfrom', index:'validfrom', width:120, sorttype:"date"},
+        {name:'validto', index:'validto', width:120, sorttype:"date"}
+    ],
+    multiselect: false,
+    caption: "Certificates"/*,
+     pager: '#p11Pager',
+     viewrecords: true*/
+});
+// $("#p11certs").jqGrid('navGrid','#p11Pager',{add:false,del:false,edit:false,position:'right'});
+$("#wincerts").jqGrid({
+    datatype: "local",
+    height: 250,
+    colNames: ['No.', 'Serial Number', 'Common Name', 'Valid From', 'Valid To'],
+    colModel: [
+        {name:'id', index:'id', width:60, sorttype:"int"},
+        {name: 'serial', index: 'serial', width:120, sorttype:"string"},
+        {name:'commonName', index:'commonName', width: 120, sorttype:"string"},
+        {name:'validfrom', index:'validfrom', width:120, sorttype:"date"},
+        {name:'validto', index:'validto', width:120, sorttype:"date"}
+    ],
+    multiselect: false,
+    caption: "Certificates"/*,
+     pager: '#p11Pager',
+     viewrecords: true*/
+});
+$.widget( "ui.tabs", $.ui.tabs, {
+    options: {
+        orientation: "horizontal"
+    },
+    _create: function() {
+        this._super();
+        this._handleOrientation();
+    },
+    _handleOrientation: function() {
+        if ( this.options.orientation === "vertical" ) {
+            this.element.addClass( "ui-tabs-vertical" );
+        }
+    },
+    _setOption: function( key, value ) {
+        this._superApply( arguments );
+        if ( key === "orientation" ) {
+            this.element.removeClass( "ui-tabs-vertical" );
+            this._handleOrientation();
+        }
+    },
+    _destroy: function() {
+        this._super();
+        this.element.removeClass( "ui-tabs-vertical" );
+    }
+});
+
+$( "#tabs" ).tabs({ orientation: "vertical" });
+$( "button, a" ).button();
+
+$( "#p11LoginDialog" ).dialog({
+    autoOpen:false
+});
+
+$("#signDialog").dialog({
+    autoOpen: false
+});
+
+$("#pbIsLoadingDialog").dialog({modal: true});
+try {
+    loadPKIBooster(PB_FLAVOR_DEFAULT, onPBReady);
+} catch (e) {
+    showMessage(e.message);
+}
+
+
+
+</script>
+</div>
+</body>
+</html>
