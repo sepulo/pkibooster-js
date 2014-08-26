@@ -339,14 +339,14 @@ function  _PKIBoosterManager(preferedFalvor) {
             var body = document.getElementsByTagName('body')[0];
 
             if(!document.getElementsByName(("pkiBoosterApplet"))[0]) {
-                var pbApplet = document.createElement("applet");
+               var pbApplet = document.createElement("applet");
                 pbApplet.name = "pkiBoosterApplet";
                 pbApplet.codeBase =_appletCodeBase;
                 pbApplet.archive = _appletArchive;
                 pbApplet.code = "com.vancosys.pki.applet.PKIApplet";
-                pbApplet.clientHeight = 0;
-                pbApplet.clientWidth = 0;
-                pbApplet.style = "height: 0; width: 0";
+                pbApplet.style.width = '0';
+                pbApplet.style.height = '0';
+				
                 // Load Applet
                 body.appendChild(pbApplet);
             }
@@ -370,8 +370,10 @@ function  _PKIBoosterManager(preferedFalvor) {
                     // Install ActiveX
                     body.appendChild(pbUtil);
                 }
-                throw new Error("You are going to use PKI Booster on your Internet Explorer for first time. Be patient for a couple of " +
-                    "minutes while PKI Booster is preparing. Then reload this page again. This will occur only once.");
+                throw new Error("<pre>You are going to use PKI Booster on your Internet Explorer " + CRLF +
+								" for first time. Be patient for a couple of " + CRLF +
+								"minutes while PKI Booster is preparing. Then reload this page again." + CRLF + 
+								"This will occur only once.</pre>");
             }
         }
     }
