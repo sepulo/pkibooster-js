@@ -42,7 +42,7 @@ PKI Booster is a PKI SDK that is very easy to use, supports hardware through PKC
 <pre><code>var p11 = new PKCS11Storage();
 p11.setDllName("cryptoki.dll");
 p11.open();
-var session = p11.openSession(0, False);
+var session = p11.openSession(0, false);
 session.login(PB_UT_USER, "1234");
 
 var rsaKey = new RSAKeyMaterial(p11.getCryptoProvider());
