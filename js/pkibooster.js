@@ -1210,6 +1210,18 @@ function Util() {
         else
             return this._innerUtil.StringToBase64(inString);
     }
+
+    /**
+     * Converts a Base64 encoded string data to string UTF8 encoded data
+     * @param inString the input Base64 encoded string data
+     * @return {String} string UTF8 encoded data
+     */
+    this.base64ToString = function(inString) {
+        if(applet)
+            return this._innerUtil.base64ToString(inString);
+        else
+            return this._innerUtil.Base64ToString(inString);
+    }
 }
 
 
