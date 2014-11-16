@@ -814,9 +814,9 @@ function Verifier() {
      */
     this.setStorage = function(Storage) {
         if(applet)
-            this._innerVerifier.setStorage(Storage._innerVerifier);
+            this._innerVerifier.setStorage(Storage._innerStorage);
         else
-            this._innerVerifier.Storage = Storage._innerVerifier;
+            this._innerVerifier.Storage = Storage._innerStorage;
     }
 
     /**
