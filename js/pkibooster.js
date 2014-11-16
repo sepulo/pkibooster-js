@@ -696,6 +696,16 @@ function MemoryStorage() {
         else
             innerCert = this._innerStorage.Add(innerCert, copyPrivateKey);
     }
+    /**
+     * Clears all certificates in memoryStorage.
+     *
+     */
+    this.clear = function() {
+        if(applet)
+            innerCert = this._innerStorage.clear();
+        else
+            innerCert = this._innerStorage.Clear();
+    }
 }
 
 /********************************* Signer ************************************/
