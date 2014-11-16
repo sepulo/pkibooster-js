@@ -931,13 +931,14 @@ function _Certificate() {
 
     /**
      * Loads a certificate from der-encoded Base64 string
-     * @param {String} base64 der-encoded Base64 certificate
+     * @param base64 {String} base64 der-encoded Base64 certificate
+     * @param password {String} password for decrypting data
      */
-    this._loadFromBase64 = function (base64) {
+    this._loadFromBase64 = function (base64,password) {
         if(applet)
-            this._innerCertificate = pkiBooster.pbObjFactory.loadCertificateFromBase64(base64);
+            this._innerCertificate = pkiBooster.pbObjFactory.loadCertificateFromBase64(base64,password);
         else
-            this._innerCertificate.LoadFromBase64(base64);
+            this._innerCertificate.LoadFromBase64(base64,password);
         this._loadInternals();
     }
 
