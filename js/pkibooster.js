@@ -780,6 +780,92 @@ function Signer() {
     }
 }
 
+/********************************* Verifier ************************************/
+
+/**
+ * A wrapper class around Verifier class
+ * Verifier class Verify a Signed message.
+ *
+ * @constructor
+ */
+
+function Verifier() {
+    //Keeps flavor
+    var applet = (pkiBooster.flavor == "applet");
+
+    //Wrapped verifier object
+    this._innerVerifier = null;
+
+    {
+        if(applet)
+            this._innerVerifier = pkiBooster.pbObjFactory.createVerifier();
+        else
+            this._innerVerifier = new ActiveXObject("pkiactivex.Verifier");
+    }
+
+
+    /**
+     * Sets the storage that certificate stored to be used to Verify the signed message.
+     *
+     * @param Storage the storage. It may of different types.
+     * @see PKCS11Storage
+     * @see MemoryStorage
+     * @see WinStorage
+     */
+    this.setStorage = function(Storage) {
+        if(applet)
+            this._innerVerifier.setStorage(Storage._innerVerifier);
+        else
+            this._innerVerifier.Storage = Storage._innerVerifier;
+    }
+
+    /**
+     * Verify input signed data that is encoded in Base64 in returns the message that was signed in Base64 encoded format.
+     *
+     * @param inString {String} Base64 encoded input signed data
+     * @return {String} The plain Base64 encoded message if signed message verified successfully.
+     */
+    this.verify = function (inString) {
+        var result = "";
+        if(applet)
+            result = this._innerVerifier.verify(inString);
+        else
+            result = this._innerVerifier.Verify(inString);
+        return result;
+    }
+
+    /**
+     * Verify input detached signed data that is encoded in Base64 in returns boolean value that specifies verification result.
+     *
+     * @param inString {String} Base64 encoded input plain data
+     * @param sigString {String} Base64 encoded detached signed data
+     * @return {Boolean} True if signed message verified successfully.
+     */
+    this.verifyDetached = function (inString,sigString) {
+        var result = false;
+        if(applet)
+            result = this._innerVerifier.verifyDetached(inString,sigString);
+        else
+            result = this._innerVerifier.VerifyDetached(inString,sigString);
+        return result;
+    }
+
+    /**
+     * Returns a MemoryStorage that contains certificates which exported from
+     * signed message PKCS#7 package after verifying signed message
+     * @return {MemoryStorage} a MemoryStorage that contains certificates
+     */
+    this.getCertificates = function () {
+        var result = 0;
+        if(applet)
+            result = this._innerVerifier.getCertificates();
+        else
+            result = this._innerVerifier.Certificates;
+        return result;
+    }
+}
+
+
 /********************************* Certificate *******************************/
 
 /**
