@@ -881,12 +881,14 @@ function Verifier() {
 /**
  * Loads a certificate from der-encoded Base64 string
  * @param base64 {String} base64 der-encoded Base64 certificate
- * @param password {String} password for decrypting base64 encoded data
+ * @param password {String?} password for decrypting base64 encoded data
  * @return a @link{_Certificate} object
  */
 
 function loadCerFromBase64(base64,password) {
     var cert = new _Certificate();
+    if(!password)
+        password = "";
     cert._loadFromBase64(base64,password);
     return cert;
 }
