@@ -628,6 +628,27 @@ function WinStorage() {
 
         return cert;
     }
+
+    /**
+     *  Returns the certificate object by certificate thumbprint(SHA-1 hash).
+     *
+     * @param thumbprint {String} Certificate SHA-1 hash(thumbprint)
+     * @return {_Certificate}
+     */
+    this.findByHash = function(thumbprint) {
+        var innerCert = null;
+        //todo: first lookup the cert in the internal map
+        if(applet)
+            innerCert = this._innerStorage.findByHash(thumbprint);
+        else
+            innerCert = this._innerStorage.FindByHash(thumbprint);
+
+        var cert = new _Certificate();
+        cert._innerCertificate = innerCert;
+        cert._loadInternals();
+
+        return cert;
+    }
 }
 /********************************* MemoryStorage *****************************/
 
