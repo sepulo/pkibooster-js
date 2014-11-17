@@ -914,6 +914,76 @@ function Encryptor() {
     }
 }
 
+/********************************* Decryptor ************************************/
+
+/**
+ * A wrapper class around Decryptor class
+ * Decryptor class Decrypt a PKCS#7 encrypted message and generate plain messages in Base64 encoded format.
+ *
+ * @constructor
+ */
+
+function Decryptor() {
+    //Keeps flavor
+    var applet = (pkiBooster.flavor == "applet");
+
+    //Wrapped Decryptor object
+    this._innerDecryptor = null;
+
+    {
+        if(applet)
+            this._innerDecryptor = pkiBooster.pbObjFactory.createDecryptor();
+        else
+            this._innerDecryptor = new ActiveXObject("pkiactivex.Decryptor");
+    }
+
+
+    /**
+     * Sets the storage that certificates and private keys stored to be used to
+     * decrypt the message.
+     *
+     * @param Storage the storage. It may of different types.
+     * @see PKCS11Storage
+     * @see MemoryStorage
+     * @see WinStorage
+     */
+    this.setStorage = function(Storage) {
+        if(applet)
+            this._innerDecryptor.setStorage(Storage._innerStorage);
+        else
+            this._innerDecryptor.Storage = Storage._innerStorage;
+    }
+
+    /**
+     * Decrypt input encrypted data in PKCS#7 in returns plain data as
+     * Base64 encoded format.
+     *
+     * @param encryptedData {String} PKCS#7 encrypted data that needs to be decrypted
+     * @return {String} Base64 encoded plain data
+     */
+    this.decrypt = function (encryptedData) {
+        var result = "";
+        if(applet)
+            result = this._innerDecryptor.decrypt(encryptedData);
+        else
+            result = this._innerDecryptor.Decrypt(encryptedData);
+        return result;
+    }
+
+    /**
+     * Returns algorithm used for encryption.
+     * @return {Number} encryption algorithm
+     */
+    this.getAlgorithm = function () {
+        var result = 0;
+        if(applet)
+            result = this._innerDecryptor.getAlgorithm();
+        else
+            result = this._innerDecryptor.Algorithm;
+        return result;
+    }
+}
+
 /********************************* Verifier ************************************/
 
 /**
