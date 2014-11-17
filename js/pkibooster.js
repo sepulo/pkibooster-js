@@ -810,6 +810,109 @@ function Signer() {
             this._innerSigner.HashAlgorithm = algorithm;
     }
 }
+/********************************* Encryptor ************************************/
+
+/**
+ * A wrapper class around Encryptor class
+ * Encryptor class encrypt a message and generate PKCS#7 encrypted messages.
+ *
+ * @constructor
+ */
+
+function Encryptor() {
+    //Keeps flavor
+    var applet = (pkiBooster.flavor == "applet");
+
+    //Wrapped Encryptor object
+    this._innerEncryptor = null;
+
+    {
+        if(applet)
+            this._innerEncryptor = pkiBooster.pbObjFactory.createEncryptor();
+        else
+            this._innerEncryptor = new ActiveXObject("pkiactivex.Encryptor");
+    }
+
+
+    /**
+     * Sets the storage that certificates stored to be used to
+     * encrypt the message.
+     *
+     * @param Storage the storage. It may of different types.
+     * @see PKCS11Storage
+     * @see MemoryStorage
+     * @see WinStorage
+     */
+    this.setStorage = function(Storage) {
+        if(applet)
+            this._innerEncryptor.setStorage(Storage._innerStorage);
+        else
+            this._innerEncryptor.Storage = Storage._innerStorage;
+    }
+
+    /**
+     * Encrypt input data that is encoded in Base64 in returns encrypted data in PKCS#7
+     * format and Base64 encoded.
+     *
+     * @param inString {String} Base64 encoded input data
+     * @return {String} Encrypted Base64 encoded PKCS#7 message
+     */
+    this.encrypt = function (inString) {
+        var result = "";
+        if(applet)
+            result = this._innerEncryptor.encrypt(inString);
+        else
+            result = this._innerEncryptor.Encrypt(inString);
+        return result;
+    }
+
+    /**
+     * Returns algorithm used for encrypt.
+     * @return {Number} encryption algorithm
+     */
+    this.getAlgorithm = function () {
+        var result = 0;
+        if(applet)
+            result = this._innerEncryptor.getAlgorithm();
+        else
+            result = this._innerEncryptor.Algorithm;
+        return result;
+    }
+
+    /**
+     * Sets algorithm for encrypt.
+     * @param {Number} encryption algorithm number
+     */
+    this.setAlgorithm = function (algorithm) {
+        if(applet)
+            this._innerEncryptor.setAlgorithm(algorithm);
+        else
+            this._innerEncryptor.Algorithm = algorithm;
+    }
+    /**
+     * Returns keyLength used for encrypt.
+     * @return {Number} encryption key length
+     */
+    this.getKeyLength = function () {
+        var result = 0;
+        if(applet)
+            result = this._innerEncryptor.getKeyLength();
+        else
+            result = this._innerEncryptor.KeyLength;
+        return result;
+    }
+
+    /**
+     * Sets encryption key length.
+     * @param keyLength {Number} encryption key length
+     */
+    this.setKeyLength = function (keyLength) {
+        if(applet)
+            this._innerEncryptor.setKeyLength(keyLength);
+        else
+            this._innerEncryptor.KeyLength = keyLength;
+    }
+}
 
 /********************************* Verifier ************************************/
 
