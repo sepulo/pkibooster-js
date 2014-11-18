@@ -1239,6 +1239,18 @@ function _Certificate() {
             return this._innerCertificate.SerialNumber;
     }
 
+    /**
+     * Certificate SHA1 Thumbprint (SHA1 Hash)
+     * @return {String} SHA1Thumbprint
+     */
+
+    this.getSHA1Thumbprint = function() {
+        if(applet)
+            return this._innerCertificate.getSHA1Thumbprint();
+        else
+            return this._innerCertificate.SHA1Thumbprint;
+    }
+
 }
 
 /********************************* X500Name **********************************/
